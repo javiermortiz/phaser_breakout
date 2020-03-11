@@ -34,6 +34,8 @@
         let gameOver;
         let lostFX;
         let wonFX;
+        let confetti;
+        let emitter;
         const backgroundColors = ['#FBE8A6', '#1D65A6', '#fff'];
 
         function preload() {
@@ -55,6 +57,8 @@
             game.load.audio('hit_paddle_fx', 'audio/cheer.mp3');
             game.load.audio('lost_fx', 'audio/crying.mp3');
             game.load.audio('won_fx', 'audio/small_crowd.mp3');
+            game.load.image('particles', 'img/particles.png');
+            game.load.image('confetti', 'img/confetti.png');
         }
         function create() {
             game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -111,6 +115,11 @@
             lostFX = game.add.audio('lost_fx');
             wonFX = game.add.audio('won_fx');
             backgroundMusic.play();
+
+            emitter = game.add.emitter(0, 0);
+            emitter.makeParticles('particles', 0, 1000, false, false);
+            confetti = game.add.emitter(0, 0);
+            confetti.makeParticles('confetti', 0, 2000, false, false);
         }
         function update() {
             game.physics.arcade.collide(ball, paddle, ballHitPaddle);
@@ -152,6 +161,9 @@
         }
 
         function ballHitBrick(ball, brick) {
+            emitter.x = ball.x;
+            emitter.y = ball.y;
+            emitter.explode(2000, 10);
             let killTween = game.add.tween(brick.scale);
             killTween.to({x:0,y:0}, 200, Phaser.Easing.Linear.None);
             killTween.onComplete.addOnce(function(){
@@ -212,6 +224,9 @@
         }
 
         function ballHitPaddle(ball, paddle) {
+            confetti.x = ball.x;
+            confetti.y = ball.y;
+            confetti.explode(2000, 15);
             ball.animations.play('wobble');
             ball.body.velocity.x = -1*5*(paddle.x-ball.x);
             hitAfterHit = false;
