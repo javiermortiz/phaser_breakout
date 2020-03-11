@@ -167,7 +167,7 @@
                 score += 10;
             }
             scoreText.setText('Points: ' +score);
-            if (killCount === (brickInfo.count.row*brickInfo.count.col)-1) {
+            if (killCount >= (brickInfo.count.row*brickInfo.count.col)-1) {
                 youWon.visible = true;
                 wonFX.play();
                 ball.reset(game.world.width * 0.5, game.world.height - 25);
@@ -183,6 +183,7 @@
             }
             game.stage.backgroundColor = backgroundColors[backgroundSelector];
             hitAfterHit = true;
+            shake();
         }
 
         function ballLeaveScreen() {
@@ -239,6 +240,10 @@
             soundOffButton = game.add.button(game.world.width - 80, 16, 'sound_off', muteSound, this)
             soundOffButton.anchor.set(0.5);
             soundOffButton.scale.setTo(0.5, 0.5);
+        }
+
+        function shake() {
+            game.camera.shake(0.01, 100);
         }
     </script>
 </body>
