@@ -26,7 +26,14 @@
         let playing = false;
         let startButton;
         let backgroundSelector = 0;
+        let killCount = 0;
         let hitAfterHit = false;
+        let soundOnButton;
+        let soundOffButton;
+        let youWon;
+        let gameOver;
+        let lostFX;
+        let wonFX;
         const backgroundColors = ['#FBE8A6', '#1D65A6', '#fff'];
 
         function preload() {
@@ -41,7 +48,13 @@
             game.load.image('brick', 'img/brick2.png');
             game.load.spritesheet('ball', 'img/wobble3.png', 20, 20);
             game.load.spritesheet('button', 'img/button3.png', 120, 40);
+            game.load.image('sound_off', 'img/soundOnBlack.png');
+            game.load.image('sound_on', 'img/soundOffBlack.png');
             game.load.audio('background_music', ['audio/Platformer2.mp3', 'audio/Platformer2.ogg']);
+            game.load.audio('hit_brick_fx', 'audio/explosion.mp3');
+            game.load.audio('hit_paddle_fx', 'audio/cheer.mp3');
+            game.load.audio('lost_fx', 'audio/crying.mp3');
+            game.load.audio('won_fx', 'audio/small_crowd.mp3');
         }
         function create() {
             game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -78,11 +91,25 @@
             lifeLostText = game.add.text(game.world.width*0.5, (game.world.height * 0.5)+50, 'Life lost, click to continue', textStyle);
             lifeLostText.anchor.set(0.5);
             lifeLostText.visible = false;
+            youWon = game.add.text(game.world.width*0.5, (game.world.height*0.5)+50, 'You Won!', textStyle);
+            youWon.anchor.set(0.5);
+            youWon.visible = false;
+            gameOver = game.add.text(game.world.width * 0.5, (game.world.height * 0.5) + 50, 'Game Over', textStyle);
+            gameOver.anchor.set(0.5);
+            gameOver.visible = false;
 
             startButton = game.add.button(game.world.width*0.5, (game.world.height*0.5)+50, 'button', startGame, this, 1, 0, 2);
             startButton.anchor.set(0.5);
 
+            soundOffButton = game.add.button(game.world.width-80, 16, 'sound_off', muteSound, this)
+            soundOffButton.anchor.set(0.5);
+            soundOffButton.scale.setTo(0.5, 0.5);
+
             backgroundMusic = game.add.audio('background_music');
+            hitBrickFX = game.add.audio('hit_brick_fx');
+            hitPaddleFX = game.add.audio('hit_paddle_fx');
+            lostFX = game.add.audio('lost_fx');
+            wonFX = game.add.audio('won_fx');
             backgroundMusic.play();
         }
         function update() {
@@ -116,6 +143,7 @@
                     let brickY = (r*(brickInfo.height+brickInfo.padding)) + brickInfo.offset.top;
                     newBrick = game.add.sprite(brickX, brickY, 'brick');
                     game.physics.enable(newBrick, Phaser.Physics.ARCADE);
+                    newBrick.body.bounce.y = 0.7 + Math.random() * 0.2;
                     newBrick.body.immovable = true;
                     newBrick.anchor.set(0.5);
                     bricks.add(newBrick);
@@ -128,8 +156,10 @@
             killTween.to({x:0,y:0}, 200, Phaser.Easing.Linear.None);
             killTween.onComplete.addOnce(function(){
                 brick.kill();
+                killCount++;
             }, this);
             killTween.start();
+            hitBrickFX.play();
             ball.animations.play('wobble');
             if (hitAfterHit) {
                 score += 20
@@ -137,9 +167,14 @@
                 score += 10;
             }
             scoreText.setText('Points: ' +score);
-            if (score === brickInfo.count.row*brickInfo.count.col*10) {
-                alert('You won the game, congratulations!');
-                location.reload();
+            if (killCount === (brickInfo.count.row*brickInfo.count.col)-1) {
+                youWon.visible = true;
+                wonFX.play();
+                ball.reset(game.world.width * 0.5, game.world.height - 25);
+                ball2.reset(game.world.width * 0.5, game.world.height - 25);
+                game.input.onDown.addOnce(function () {
+                    location.reload();
+                }, this);
             }
             if (backgroundSelector === 2) {
                 backgroundSelector = 0;
@@ -165,8 +200,13 @@
                     ball2.body.velocity.set(-150, -100);
                 }, this);
             } else {
-                alert('You lost, game over!');
-                location.reload();
+                gameOver.visible = true;
+                lostFX.play();
+                ball.reset(game.world.width * 0.5, game.world.height - 25);
+                ball2.reset(game.world.width * 0.5, game.world.height - 25);
+                game.input.onDown.addOnce(function () {
+                    location.reload();
+                }, this);
             }
         }
 
@@ -174,13 +214,31 @@
             ball.animations.play('wobble');
             ball.body.velocity.x = -1*5*(paddle.x-ball.x);
             hitAfterHit = false;
+            hitPaddleFX.play();
         }
 
         function startGame() {
             startButton.destroy();
+            hitPaddleFX.play();
             ball.body.velocity.set(150, -150);
             ball2.body.velocity.set(-150, -100);
             playing = true;
+        }
+
+        function muteSound() {
+            game.sound.mute = true;
+            soundOffButton.destroy();
+            soundOnButton = game.add.button(game.world.width - 80, 16, 'sound_on', unmuteSound, this)
+            soundOnButton.anchor.set(0.5);
+            soundOnButton.scale.setTo(0.5, 0.5);
+        }
+
+        function unmuteSound () {
+            game.sound.mute = false;
+            soundOnButton.destroy();
+            soundOffButton = game.add.button(game.world.width - 80, 16, 'sound_off', muteSound, this)
+            soundOffButton.anchor.set(0.5);
+            soundOffButton.scale.setTo(0.5, 0.5);
         }
     </script>
 </body>
